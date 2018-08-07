@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2037
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DapperPocos", "DapperPocos\DapperPocos.csproj", "{CC9CD138-E822-44C9-82A6-6BB2F4117B0F}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DapperPocos.Installer", "DapperPocos.Installer\DapperPocos.Installer.wixproj", "{129AFA78-15C6-48B0-95BC-D01034387F2C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{D8E5D19A-818A-455B-9F6B-479B2324071E}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		LICENSE.rtf = LICENSE.rtf
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "screenshots", "screenshots", "{69FEB032-C949-4194-B753-F38C3582FC09}"
+	ProjectSection(SolutionItems) = preProject
+		screenshots\SelectStatement.png = screenshots\SelectStatement.png
+		screenshots\StoredProcedure.png = screenshots\StoredProcedure.png
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CC9CD138-E822-44C9-82A6-6BB2F4117B0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC9CD138-E822-44C9-82A6-6BB2F4117B0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC9CD138-E822-44C9-82A6-6BB2F4117B0F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CC9CD138-E822-44C9-82A6-6BB2F4117B0F}.Debug|x86.Build.0 = Debug|Any CPU
+		{CC9CD138-E822-44C9-82A6-6BB2F4117B0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC9CD138-E822-44C9-82A6-6BB2F4117B0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC9CD138-E822-44C9-82A6-6BB2F4117B0F}.Release|x86.ActiveCfg = Release|Any CPU
+		{CC9CD138-E822-44C9-82A6-6BB2F4117B0F}.Release|x86.Build.0 = Release|Any CPU
+		{129AFA78-15C6-48B0-95BC-D01034387F2C}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{129AFA78-15C6-48B0-95BC-D01034387F2C}.Debug|Any CPU.Build.0 = Debug|x86
+		{129AFA78-15C6-48B0-95BC-D01034387F2C}.Debug|x86.ActiveCfg = Debug|x86
+		{129AFA78-15C6-48B0-95BC-D01034387F2C}.Debug|x86.Build.0 = Debug|x86
+		{129AFA78-15C6-48B0-95BC-D01034387F2C}.Release|Any CPU.ActiveCfg = Release|x86
+		{129AFA78-15C6-48B0-95BC-D01034387F2C}.Release|Any CPU.Build.0 = Release|x86
+		{129AFA78-15C6-48B0-95BC-D01034387F2C}.Release|x86.ActiveCfg = Release|x86
+		{129AFA78-15C6-48B0-95BC-D01034387F2C}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{69FEB032-C949-4194-B753-F38C3582FC09} = {D8E5D19A-818A-455B-9F6B-479B2324071E}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1762BC73-1926-44E5-A01F-4D9CAE69A828}
+	EndGlobalSection
+EndGlobal

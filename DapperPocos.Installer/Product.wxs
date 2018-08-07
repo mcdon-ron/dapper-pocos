@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="Dapper POCOs" Language="1033" Version="1.0.0.0" Manufacturer="mcdon-ron" UpgradeCode="d09652b9-3ff4-4795-9ab9-4cfc72cf6cbe">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Feature Id="ProductFeature" Title="Dapper Pocos" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="ScreenShots" />
+    </Feature>
+
+    <Property Id="ARPCOMMENTS" Value="Generate POCO's for use with Dapper." />
+    <SetProperty Id="ARPINSTALLLOCATION" Value="[INSTALLFOLDER]" After="CostFinalize" />
+    <SetProperty Id="ARPREADME" Value="[#README.md]" After="CostFinalize" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/mcdon-ron/dapper-pocos" />
+
+    <Property Id="DISABLEADVTSHORTCUTS" Value="1" />
+
+    <UIRef Id="WixUI_Minimal" />
+    <WixVariable Id="WixUILicenseRtf" Value="..\LICENSE.rtf" />
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramMenuFolder" />
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="Dapper POCOs">
+          <Directory Id="screenshots" Name="screenshots"/>
+        </Directory>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component>
+        <File Source="$(var.DapperPocos.TargetDir)DapperPocos.exe" KeyPath="yes">
+          <Shortcut Id="exeShortcut" Directory="ProgramMenuFolder" Name="Dapper POCOs" WorkingDirectory="INSTALLDIR" Advertise="yes" />
+        </File>
+      </Component>
+      <Component>
+        <File Source="$(var.DapperPocos.TargetDir)Dapper.dll"/>
+      </Component>
+      <Component>
+        <File Source="..\README.md" />
+      </Component>
+    </ComponentGroup>
+
+    <!--<Component Id="exeShortcut" Guid="{723A564F-1F49-46BB-AD8C-559FECDF39F0}" Directory="ProgramMenuFolder">
+      <RegistryValue Root="HKCU"
+                     Key="Software\McDon\DapperPOCOs"
+                     Name="installed"
+                     Type="integer"
+                     Value="1" />
+      <Shortcut Id="StartMenuShortCut"
+                Name="Dapper POCOs"
+                Directory="ProgramMenuFolder"
+                Target="[INSTALLFOLDER]DapperPocos.exe" />
+    </Component>-->
+
+    <ComponentGroup Id="ScreenShots" Directory="screenshots">
+      <Component>
+        <File Source="..\screenshots\StoredProcedure.png" />
+      </Component>
+      <Component>
+        <File Source="..\screenshots\SelectStatement.png" />
+      </Component>
+    </ComponentGroup>
+
+  </Fragment>
+</Wix>
