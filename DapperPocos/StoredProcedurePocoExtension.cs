@@ -10,7 +10,7 @@ namespace PocoExtension
     {
         public static string GetInputPoco(this SqlConnection sqlConnection, string storedProcedureName)
         {
-            var set = sqlConnection.QueryMultiple($"sp_HELP N'{storedProcedureName}'", CommandType.StoredProcedure);
+            var set = sqlConnection.QueryMultiple("sp_HELP", new { objname = storedProcedureName }, commandType: CommandType.StoredProcedure);
             set.Read();
             if (set.IsConsumed)
                 return "// N/A";
@@ -21,95 +21,126 @@ namespace PocoExtension
             sb.AppendLine("{");
             foreach (var item in list)
             {
-                string type = Map(item.Type);
                 string name = item.Parameter_name;
-                //name = name.Substring(1); // drop the leading '@'
-                sb.AppendLine($"    public {type} {name.Substring(1)} {{ get; set; }}");
+                name = name.TrimStart('@');
+                string stype = item.Type;
+
+                AppendProperty(sb, stype, name);
             }
             sb.AppendLine("}");
             return sb.ToString();
         }
 
-        public static string GetOutputPoco(this SqlConnection sqlConnection, string storedProcedureName)
+        public static string GetOutputPoco(this SqlConnection sqlConnection, string sql)
         {
-            var list = sqlConnection.Query($"sp_describe_first_result_set N'{storedProcedureName}'", CommandType.StoredProcedure);
+            var list = sqlConnection.Query("sp_describe_first_result_set", new { tsql = sql }, commandType: CommandType.StoredProcedure);
             var sb = new StringBuilder();
             sb.AppendLine("public class OutputPoco");
             sb.AppendLine("{");
             foreach (var item in list)
             {
-                string type = Map(item.system_type_name);
                 string name = item.name;
-                sb.AppendLine($"    public {type} {name} {{ get; set; }}");
+                string stype = item.system_type_name;
+
+                AppendProperty(sb, stype, name);
             }
             sb.AppendLine("}");
             return sb.ToString();
         }
 
-        public static string Map(string sqlTypeName)
+        private static void AppendProperty(StringBuilder stringBuilder, string sqlType, string name)
+        {
+            string csType = null;
+            if (TryMap(sqlType, out csType))
+                stringBuilder.AppendLine($"    public {csType} {name} {{ get; set; }}");
+            else
+            {
+                stringBuilder.AppendLine($"    // TODO: Add Mapping for Unknown SQL Server Data Type: {sqlType}");
+                stringBuilder.AppendLine($"    // public object {name} {{ get; set; }}");
+            }
+        }
+
+        public static bool TryMap(string sqlType, out string csType)
         {
             // drop any length specifier
             // like nvarchar(x) -> nvarchar
-            var typeName = sqlTypeName.Split('(')[0];
+            var type = sqlType.Split('(')[0];
             // sql types that are commented out
             // are those I don't know how to
             // properly map to clr types
-            switch (typeName)
+            switch (type)
             {
                 case "bigint":
-                    return "long"; // Int64
+                    csType = "long"; // Int64
+                    break;
                 case "binary":
                 case "image":
                 //case "FILESTREAM":
                 case "rowversion":
                 case "timestamp":
                 case "varbinary":
-                    return "byte[]"; // Byte[]
+                    csType = "byte[]"; // Byte[]
+                    break;
                 case "bit":
-                    return "bool"; // Boolean
+                    csType = "bool"; // Boolean
+                    break;
                 case "char":
                 case "nchar":
                 case "text":
                 case "ntext":
                 case "varchar":
                 case "nvarchar":
-                    return "string"; // String
+                    csType = "string"; // String
+                    break;
                 case "date":
                 case "datetime":
                 case "datetime2":
                 case "smalldatetime":
-                    return "DateTime";
+                    csType = "DateTime";
+                    break;
                 case "datetimeoffset":
-                    return "DateTimeOffset";
+                    csType = "DateTimeOffset";
+                    break;
                 case "decimal":
                 case "money":
                 case "numeric":
                 case "smallmoney":
-                    return "decimal"; // Decimal
+                    csType = "decimal"; // Decimal
+                    break;
                 case "float":
-                    return "double"; // Double
+                    csType = "double"; // Double
+                    break;
                 case "int":
-                    return "int"; // Int32
+                    csType = "int"; // Int32
+                    break;
                 case "real":
-                    return "float"; // Single
+                    csType = "float"; // Single
+                    break;
                 case "smallint":
-                    return "short"; // Int16
+                    csType = "short"; // Int16
+                    break;
                 //case "sql_variant":
                 //return "Object";
                 case "time":
-                    return "TimeSpan";
+                    csType = "TimeSpan";
+                    break;
                 case "tinyint":
-                    return "byte"; // Byte
+                    csType = "byte"; // Byte
+                    break;
                 case "uniqueidentifier":
-                    return "Guid";
+                    csType = "Guid";
+                    break;
                 case "xml":
                     // based on https://github.com/StackExchange/Dapper/issues/427
                     // it apprears Dapper can map the DbType "xml" to XmlDocument or XDocument or XElement
                     // choosing XDocument based on https://stackoverflow.com/a/1542101/135280
-                    return "XDocument";
+                    csType = "XDocument";
+                    break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(sqlTypeName), sqlTypeName, "Unhandled SQL Type");
+                    csType = null;
+                    return false;
             }
+            return true;
         }
     }
 }

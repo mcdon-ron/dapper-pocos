@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="Dapper POCOs" Language="1033" Version="1.0.0.0" Manufacturer="mcdon-ron" UpgradeCode="d09652b9-3ff4-4795-9ab9-4cfc72cf6cbe">
+  <Product Id="*" Name="Dapper POCOs" Language="1033" Version="!(bind.fileVersion.DapperPocos.exe)" Manufacturer="mcdon-ron" UpgradeCode="d09652b9-3ff4-4795-9ab9-4cfc72cf6cbe">
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
