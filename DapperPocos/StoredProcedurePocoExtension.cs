@@ -1,8 +1,7 @@
-﻿using System.Data;
-using Dapper;
+﻿using Dapper;
+using System.Data;
 using System.Data.SqlClient;
 using System.Text;
-using System;
 
 namespace PocoExtension
 {
@@ -19,13 +18,18 @@ namespace PocoExtension
             var sb = new StringBuilder();
             sb.AppendLine("public class InputPoco");
             sb.AppendLine("{");
+            // add a note for the user about nullable parameters
+            // because sp_HELP doesn't indicate if a parameter is nullable
+            sb.AppendLine("    // TODO: decide if the following properties are nullable");
             foreach (var item in list)
             {
                 string name = item.Parameter_name;
                 name = name.TrimStart('@');
                 string stype = item.Type;
 
-                AppendProperty(sb, stype, name);
+                // for now assuming parameters are not nullable
+                // leaving it to the user to decide
+                AppendProperty(sb, stype, false, name);
             }
             sb.AppendLine("}");
             return sb.ToString();
@@ -41,27 +45,32 @@ namespace PocoExtension
             {
                 string name = item.name;
                 string stype = item.system_type_name;
+                bool nullable = item.is_nullable;
 
-                AppendProperty(sb, stype, name);
+                AppendProperty(sb, stype, nullable, name);
             }
             sb.AppendLine("}");
             return sb.ToString();
         }
 
-        private static void AppendProperty(StringBuilder stringBuilder, string sqlType, string name)
+        private static void AppendProperty(StringBuilder stringBuilder, string sqlType, bool nullable, string name)
         {
             string csType = null;
-            if (TryMap(sqlType, out csType))
+            if (TryMap(sqlType, nullable, out csType))
                 stringBuilder.AppendLine($"    public {csType} {name} {{ get; set; }}");
             else
             {
                 stringBuilder.AppendLine($"    // TODO: Add Mapping for Unknown SQL Server Data Type: {sqlType}");
+                stringBuilder.AppendLine($"    // nullable type: {nullable}");
                 stringBuilder.AppendLine($"    // public object {name} {{ get; set; }}");
             }
         }
 
-        public static bool TryMap(string sqlType, out string csType)
+        public static bool TryMap(string sqlType, bool nullable, out string csType)
         {
+            // for handling nullable value types
+            var n = nullable ? "?" : string.Empty;
+
             // drop any length specifier
             // like nvarchar(x) -> nvarchar
             var type = sqlType.Split('(')[0];
@@ -71,7 +80,7 @@ namespace PocoExtension
             switch (type)
             {
                 case "bigint":
-                    csType = "long"; // Int64
+                    csType = "long" + n; // Int64
                     break;
                 case "binary":
                 case "image":
@@ -82,7 +91,7 @@ namespace PocoExtension
                     csType = "byte[]"; // Byte[]
                     break;
                 case "bit":
-                    csType = "bool"; // Boolean
+                    csType = "bool" + n; // Boolean
                     break;
                 case "char":
                 case "nchar":
@@ -96,43 +105,43 @@ namespace PocoExtension
                 case "datetime":
                 case "datetime2":
                 case "smalldatetime":
-                    csType = "DateTime";
+                    csType = "DateTime" + n;
                     break;
                 case "datetimeoffset":
-                    csType = "DateTimeOffset";
+                    csType = "DateTimeOffset" + n;
                     break;
                 case "decimal":
                 case "money":
                 case "numeric":
                 case "smallmoney":
-                    csType = "decimal"; // Decimal
+                    csType = "decimal" + n; // Decimal
                     break;
                 case "float":
-                    csType = "double"; // Double
+                    csType = "double" + n; // Double
                     break;
                 case "int":
-                    csType = "int"; // Int32
+                    csType = "int" + n; // Int32
                     break;
                 case "real":
-                    csType = "float"; // Single
+                    csType = "float" + n; // Single
                     break;
                 case "smallint":
-                    csType = "short"; // Int16
+                    csType = "short" + n; // Int16
                     break;
                 //case "sql_variant":
                 //return "Object";
                 case "time":
-                    csType = "TimeSpan";
+                    csType = "TimeSpan" + n;
                     break;
                 case "tinyint":
-                    csType = "byte"; // Byte
+                    csType = "byte" + n; // Byte
                     break;
                 case "uniqueidentifier":
-                    csType = "Guid";
+                    csType = "Guid" + n;
                     break;
                 case "xml":
                     // based on https://github.com/StackExchange/Dapper/issues/427
-                    // it apprears Dapper can map the DbType "xml" to XmlDocument or XDocument or XElement
+                    // it appears Dapper can map the DbType "xml" to XmlDocument or XDocument or XElement
                     // choosing XDocument based on https://stackoverflow.com/a/1542101/135280
                     csType = "XDocument";
                     break;
