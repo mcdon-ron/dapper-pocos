@@ -5,7 +5,7 @@ using System.Text;
 
 namespace PocoExtension
 {
-    public static class StoredProcedurePocoExtension
+    public static class SqlConnectionPocoExtension
     {
         public static string GetInputPoco(this SqlConnection sqlConnection, string storedProcedureName)
         {
