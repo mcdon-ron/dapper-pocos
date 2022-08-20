@@ -46,7 +46,7 @@ namespace DapperPocos
                 if (string.IsNullOrEmpty(sprocOrSelect))
                     return;
 
-                var isSelectStatement = sprocOrSelect.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase);
+                var isSelectStatement = sprocOrSelect.Trim().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase);
                 using (var con = new SqlConnection(txbConnectionString.Text))
                 {
                     txbOutputPoco.Text = con.GetOutputPoco(sprocOrSelect);
