@@ -56,16 +56,29 @@ namespace PocoExtension
         private static void AppendProperty(StringBuilder stringBuilder, string sqlType, bool nullable, string name)
         {
             sqlType = sqlType.Trim();
-            name = name.Trim();
+
+            // handle null or empty column names
+            if (name != null)
+                name = name.Trim();
+
+            string cc = string.Empty;
+
+            if(string.IsNullOrEmpty(name))
+            {
+                // convert to string representation of null or empty
+                name = name == null ? "null" : "string.Empty";
+                cc = "//"; // preparing to comment out related property in OutputPoco
+                stringBuilder.AppendLine($"    // TODO: Commenting out property because Column Name is {name}.");
+            }
 
             string csType = null;
             string length = null;
             if (TryMap(sqlType, nullable, out csType, out length))
             {
                 if (csType == "string" && !string.IsNullOrEmpty(length))
-                    stringBuilder.AppendLine($"    public {csType} {name} {{ get; set; }} // Length: {length}");
+                    stringBuilder.AppendLine($"    {cc}public {csType} {name} {{ get; set; }} // Length: {length}");
                 else
-                    stringBuilder.AppendLine($"    public {csType} {name} {{ get; set; }}");
+                    stringBuilder.AppendLine($"    {cc}public {csType} {name} {{ get; set; }}");
             }
             else
             {
