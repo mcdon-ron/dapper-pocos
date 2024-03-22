@@ -1,14 +1,25 @@
 ﻿using Dapper;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Text;
 
 namespace PocoExtension
 {
     public static class SqlConnectionPocoExtension
     {
+
         public static string GetInputPoco(this SqlConnection sqlConnection, string storedProcedureName)
         {
+            var sql = @"
+SELECT *
+FROM sys.parameters p
+WHERE p.[object_id] = object_id(@objName)
+";
+            // querying sys.parameters to find out if the parameters are nullable
+            // and if they are output parameters
+            var parmDetails = sqlConnection.Query<ParameterDetails>(sql, new { objName = storedProcedureName }, commandType: CommandType.Text);
+
             var set = sqlConnection.QueryMultiple("sp_HELP", new { objname = storedProcedureName }, commandType: CommandType.StoredProcedure);
             set.Read();
             if (set.IsConsumed)
@@ -16,21 +27,47 @@ namespace PocoExtension
 
             var list = set.Read();
             var sb = new StringBuilder();
+
             sb.AppendLine("public class InputPoco");
             sb.AppendLine("{");
-            // add a note for the user about nullable parameters
-            // because sp_HELP doesn't indicate if a parameter is nullable
-            sb.AppendLine("    // TODO: decide if the following properties are nullable");
+
             foreach (var item in list)
             {
                 string name = item.Parameter_name;
-                name = name.TrimStart('@');
-                string stype = item.Type;
+                var trimmedName = name.TrimStart('@');
+                string type = item.Type;
 
-                // for now assuming parameters are not nullable
-                // leaving it to the user to decide
-                AppendProperty(sb, stype, false, name);
+                // length in bytes
+                var length = item.Length;
+                var lType = length.GetType();
+
+                string stype = type;
+
+                // if a string type, add the length specifier
+                // for char and varchar 1 byte per character
+                if(type == "char" || type == "varchar")
+                {
+                    if(length == -1)
+                        stype += "(max)";
+                    else
+                        stype += "(" + length + ")";
+                }
+                // for nchar and nvarchar 2 bytes per character
+                else if (type == "nchar" || type == "nvarchar")
+                {
+                    if(length == -1)
+                        stype += "(max)";
+                    else
+                        stype += "(" + length / 2 + ")";
+                }
+
+                var details = parmDetails.Single(x => x.name == name);
+                var nullable = details.is_nullable == true;
+                var isOutput = details.is_output;
+
+                AppendProperty(sb, stype, nullable, isOutput, trimmedName);
             }
+
             sb.AppendLine("}");
             return sb.ToString();
         }
@@ -46,14 +83,16 @@ namespace PocoExtension
                 string name = item.name;
                 string sqlType = item.system_type_name;
                 bool nullable = item.is_nullable;
+                // the output parameters only apply to input poco
+                bool isOutput = false;
 
-                AppendProperty(sb, sqlType, nullable, name);
+                AppendProperty(sb, sqlType, nullable, isOutput, name);
             }
             sb.AppendLine("}");
             return sb.ToString();
         }
 
-        private static void AppendProperty(StringBuilder stringBuilder, string sqlType, bool nullable, string name)
+        private static void AppendProperty(StringBuilder stringBuilder, string sqlType, bool nullable, bool isOutput, string name)
         {
             sqlType = sqlType.Trim();
 
@@ -75,15 +114,26 @@ namespace PocoExtension
             string length = null;
             if (TryMap(sqlType, nullable, out csType, out length))
             {
+                stringBuilder.Append($"    {cc}public {csType} {name} {{ get; set; }}");
+                if (isOutput)
+                    stringBuilder.Append($" // IsOutput: {isOutput}");
+                //if ((csType == "string" || csType == "string?") && !string.IsNullOrEmpty(length))
+                //    stringBuilder.Append($" // Length: {length}");
                 if (csType == "string" && !string.IsNullOrEmpty(length))
-                    stringBuilder.AppendLine($"    {cc}public {csType} {name} {{ get; set; }} // Length: {length}");
-                else
-                    stringBuilder.AppendLine($"    {cc}public {csType} {name} {{ get; set; }}");
+                {
+                    stringBuilder.Append($" // Length: {length}");
+                    if (nullable)
+                        stringBuilder.Append(" // Nullable");
+                }
+                stringBuilder.AppendLine();
             }
             else
             {
                 stringBuilder.AppendLine($"    // TODO: Add Mapping for Unknown SQL Server Data Type: {sqlType}");
                 stringBuilder.AppendLine($"    // nullable type: {nullable}");
+                if (isOutput)
+                    stringBuilder.AppendLine($"    // IsOutput: {isOutput}");
+
                 stringBuilder.AppendLine($"    // public object {name} {{ get; set; }}");
             }
         }
@@ -137,10 +187,13 @@ namespace PocoExtension
                 case "bit":
                     csType = "bool" + n; // Boolean
                     break;
-                case "char":
-                case "nchar":
                 case "text":
                 case "ntext":
+                    csType = "string";
+                    stringLength = type;
+                    break;
+                case "char":
+                case "nchar":
                 case "varchar":
                 case "nvarchar":
                     if (stringLength == "1")
