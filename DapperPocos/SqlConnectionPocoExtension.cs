@@ -39,7 +39,6 @@ WHERE p.[object_id] = object_id(@objName)
 
                 // length in bytes
                 var length = item.Length;
-                var lType = length.GetType();
 
                 string stype = type;
 
