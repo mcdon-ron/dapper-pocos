@@ -83,40 +83,38 @@ namespace DapperPocos
         // https://stackoverflow.com/questions/937298/restoring-window-size-position-with-multiple-monitors
         private void RestoreWindow()
         {
-            // this is the default
+            var settings = Properties.Settings.Default;
+
+            // set defaults for WindowState and StartPosition
             WindowState = FormWindowState.Normal;
             StartPosition = FormStartPosition.WindowsDefaultLocation;
 
-            // check if the saved bounds are nonzero and visible on any screen
-            if ((Properties.Settings.Default.WindowPosition != Rectangle.Empty) &&
-                (IsVisibleOnAnyScreen(Properties.Settings.Default.WindowPosition)))
-            {
-                // first set the bounds
-                StartPosition = FormStartPosition.Manual;
-                DesktopBounds = Properties.Settings.Default.WindowPosition;
+            var restorePosition = settings.WindowPosition;
+            var restoreState = settings.WindowState;
 
-                // afterwards set the window state to the saved value (which could be Maximized)
-                WindowState = Properties.Settings.Default.WindowState;
-            }
-            else
+            if (restorePosition != Rectangle.Empty)
             {
-                // this resets the upper left corner of the window to windows standards
-                StartPosition = FormStartPosition.WindowsDefaultLocation;
-
-                // we can still apply the saved size
-                // added gatekeeper, otherwise first time appears as just a title bar
-                if (Properties.Settings.Default.WindowPosition != Rectangle.Empty)
+                // check if the saved bounds are nonzero and visible on any screen
+                if (IsVisibleOnAnyScreen(restorePosition))
                 {
-                    Size = Properties.Settings.Default.WindowPosition.Size;
+                    // first set the bounds
+                    StartPosition = FormStartPosition.Manual;
+                    DesktopBounds = restorePosition;
                 }
-
-                // afterwards set the window state to the saved value (which could be Maximized)
-                WindowState = Properties.Settings.Default.WindowState;
+                else // the restorePosition was invalid, but can still apply the saved size
+                {
+                    Size = restorePosition.Size;
+                }
             }
 
-            RestoreSplitter(splitterConnectionString, Properties.Settings.Default.SplitterConnectionString);
-            RestoreSplitter(splitterSelectOrSproc, Properties.Settings.Default.SplitterSelectOrSproc);
-            RestoreSplitter(splitterOutput, Properties.Settings.Default.SplitterOutput);
+            // afterwards, if the window wasn't minimized, will restore WindowState
+            // otherwise had previously defaulted WindowState to Normal
+            if (restoreState != FormWindowState.Minimized)
+                WindowState = restoreState;
+
+            RestoreSplitter(splitterConnectionString, settings.SplitterConnectionString);
+            RestoreSplitter(splitterSelectOrSproc, settings.SplitterSelectOrSproc);
+            RestoreSplitter(splitterOutput, settings.SplitterOutput);
         }
 
         private void RestoreSplitter(Splitter splitter, int splitPosition)
@@ -127,35 +125,33 @@ namespace DapperPocos
 
         private void SaveWindow()
         {
+            var settings = Properties.Settings.Default;
+
             // only save the WindowState if Normal or Maximized
             switch (WindowState)
             {
+                // if Normal, save WindowState and DesktopBounds
                 case FormWindowState.Normal:
+                    settings.WindowPosition = DesktopBounds;
+                    settings.WindowState = WindowState;
+                    break;
+                // if Maximized, save WindowState and RestoreBounds
                 case FormWindowState.Maximized:
-                    Properties.Settings.Default.WindowState = WindowState;
+                    settings.WindowPosition = RestoreBounds;
+                    settings.WindowState = WindowState;
                     break;
-                // if Minimized, save WindowState as Normal
-                default:
-                    Properties.Settings.Default.WindowState = FormWindowState.Normal;
+                // if Minimized, save WindowState as Normal and RestoreBounds
+                case FormWindowState.Minimized:
+                    settings.WindowPosition = RestoreBounds;
+                    settings.WindowState = FormWindowState.Normal;
                     break;
             }
 
-            // if WindowsState is Normal, save the DesktopBounds
-            if (WindowState == FormWindowState.Normal)
-            {
-                Properties.Settings.Default.WindowPosition = DesktopBounds;
-            }
-            // for Minimized or Maximized save RestoreBounds
-            else
-            {
-                Properties.Settings.Default.WindowPosition = RestoreBounds;
-            }
+            settings.SplitterConnectionString = splitterConnectionString.SplitPosition;
+            settings.SplitterSelectOrSproc = splitterSelectOrSproc.SplitPosition;
+            settings.SplitterOutput = splitterOutput.SplitPosition;
 
-            Properties.Settings.Default.SplitterConnectionString = splitterConnectionString.SplitPosition;
-            Properties.Settings.Default.SplitterSelectOrSproc = splitterSelectOrSproc.SplitPosition;
-            Properties.Settings.Default.SplitterOutput = splitterOutput.SplitPosition;
-
-            Properties.Settings.Default.Save();
+            settings.Save();
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
