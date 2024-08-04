@@ -196,7 +196,7 @@ WHERE p.[object_id] = object_id(@objName)
                 case "varchar":
                 case "nvarchar":
                     if (stringLength == "1")
-                        csType = "char"; // Char
+                        csType = "char" + n; // Char
                     else
                         csType = "string"; // String
                     break;
